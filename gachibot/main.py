@@ -74,7 +74,6 @@ def request_song(callback):
         user_step[cid] = 0
     else:
         bot.send_message(cid, response['formatted_message'])
-        bot.send_message(cid, "Попробуй поискать другой трек!")
 
 
 def get_next_track():
