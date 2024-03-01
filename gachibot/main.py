@@ -19,16 +19,16 @@ def open_main_menu(message):
 
 @bot.message_handler(func=lambda message: get_user_step(message.chat.id) == 0, content_types=["text"])
 def chose_main_actions(message):
+    cid = message.chat.id
     if message.text == "Какой следующий трек?":
         next_track_name = get_next_track()
-        bot.send_message(message.chat.id, next_track_name)
+        bot.send_message(cid, next_track_name)
 
     if message.text == "Заказать трек":
-        cid = message.chat.id
         user_step[cid] = 1
         main_menu.keyboard.clear()
         main_menu.row("🔙 Назад")
-        bot.send_message(message.chat.id, "Что хочешь?", reply_markup=main_menu)
+        bot.send_message(cid, "Какой трек ищем?", reply_markup=main_menu)
 
 
 @bot.message_handler(func=lambda message: get_user_step(message.chat.id) == 1, content_types=["text"])
@@ -38,7 +38,7 @@ def handle_search(message):
         user_step[cid] = 0
         main_menu.keyboard.clear()
         main_menu.row("Какой следующий трек?", "Заказать трек")
-        bot.send_message(message.chat.id, "Что хочешь?", reply_markup=main_menu)
+        bot.send_message(cid, "Что хочешь?", reply_markup=main_menu)
         return
 
     result = search_song(message.text)
@@ -55,17 +55,26 @@ def handle_search(message):
 def request_song(callback):
     cid = callback.message.chat.id
     endpoint = "api/station/1/request/"
+    headers = {
+        "Accept": "application/json",
+        "Accept-Language": "ru"
+    }
     try:
-        request = requests.post(BASE_URL + endpoint + callback.data)
+        request = requests.post(BASE_URL + endpoint + callback.data, headers=headers)
         response = request.json()
     except requests.exceptions.RequestException as e:
-        bot.send_message(cid, "СЕЙЧАС НЕЛЬЗЯ ЗАКАЗАТЬ")
+        bot.send_message(cid, "КРИТИЧЕСКИЙ СБОЙ")
         user_step[cid] = 0
         return
     
     if response['success'] == True:
-        bot.send_message(cid, "ТРЕК ЗАКАЗАН")
+        main_menu.keyboard.clear()
+        main_menu.row("Какой следующий трек?", "Заказать трек")
+        bot.send_message(cid, "ТРЕК ЗАКАЗАН", reply_markup=main_menu)
         user_step[cid] = 0
+    else:
+        bot.send_message(cid, response['formatted_message'])
+        bot.send_message(cid, "Попробуй поискать другой трек!")
 
 
 def get_next_track():
