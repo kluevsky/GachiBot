@@ -1,9 +1,12 @@
 import requests
 import telebot
 from telebot import types
+from dotenv import dotenv_values
 
-TOKEN = "<token_string>"
-BASE_URL = "https://radio.gachibass.us.to/"
+settings = dotenv_values(".env")
+
+TOKEN = settings['TOKEN']
+BASE_URL = settings['BASE_URL']
 
 user_step = {}
 main_menu = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
@@ -103,6 +106,5 @@ def get_user_step(cid):
         return user_step[cid]
     else:
         return 0
-
 
 bot.infinity_polling()
