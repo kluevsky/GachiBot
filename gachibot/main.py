@@ -24,8 +24,8 @@ def open_main_menu(message):
 def chose_main_actions(message):
     cid = message.chat.id
     if message.text == "Какой следующий трек?":
-        next_track_name = get_next_track()
-        bot.send_message(cid, next_track_name)
+        next_track = get_next_track()
+        bot.send_photo(cid, next_track['art'], next_track['title'])
 
     if message.text == "Заказать трек":
         user_step[cid] = 1
@@ -81,9 +81,12 @@ def request_song(callback):
 
 def get_next_track():
     endpoint = "api/nowplaying/gachibass_radio"
+    next_track = {}
     request = requests.get(BASE_URL + endpoint)
     response = request.json()
-    return response['playing_next']['song']['title']
+    next_track['art'] = response['playing_next']['song']['art']
+    next_track['title'] = response['playing_next']['song']['title']
+    return next_track
 
 
 def search_song(search_phrase):
