@@ -28,7 +28,7 @@ bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 @bot.message_handler(commands=["start"])
 def handle_start(message):
-    open_main_menu(message.chat.id, "Что хочешь?")
+    open_main_menu(message.chat.id, 0, "Что хочешь?", button_labels["next_track"], button_labels["request_track"])
 
 
 @bot.message_handler(func=lambda message: get_user_step(message.chat.id) == 0, content_types=["text"])
@@ -39,16 +39,13 @@ def chose_main_actions(message):
         bot.send_photo(cid, next_track["art"], next_track["title"])
 
     if message.text == button_labels["request_track"]:
-        user_step[cid] = 1
-        main_menu.keyboard.clear()
-        main_menu.row(button_labels["go_back"])
-        bot.send_message(cid, "Какой трек ищем?", reply_markup=main_menu)
+        open_main_menu(cid, 1, "Какой трек ищем?", button_labels["go_back"])
 
 
 @bot.message_handler(func=lambda message: get_user_step(message.chat.id) == 1, content_types=["text"])
 def handle_search(message):
     if message.text == button_labels["go_back"]:
-        open_main_menu(message.chat.id, "Что хочешь?")
+        open_main_menu(message.chat.id, 0, "Что хочешь?", button_labels["next_track"], button_labels["request_track"])
         return
 
     result = search_song(message.text)
@@ -78,7 +75,7 @@ def request_song(callback):
         return
     
     if response["success"] == True:
-        open_main_menu(cid, "ТРЕК ЗАКАЗАН")
+        open_main_menu(cid, 0, "ТРЕК ЗАКАЗАН", button_labels["next_track"], button_labels["request_track"])
     else:
         bot.send_message(cid, response["formatted_message"])
 
@@ -115,10 +112,11 @@ def get_user_step(cid):
         return 0
     
 
-def open_main_menu(cid, message):
-    user_step[cid] = 0
+def open_main_menu(cid, step, message, *buttons):
+    user_step[cid] = step
     main_menu.keyboard.clear()
-    main_menu.row(button_labels["next_track"], button_labels["request_track"])
+    for button in buttons:
+        main_menu.add(button)
     bot.send_message(cid, message, reply_markup=main_menu)
 
 
