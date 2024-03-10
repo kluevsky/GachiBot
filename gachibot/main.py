@@ -115,8 +115,7 @@ def get_user_step(cid):
 def open_main_menu(cid, step, message, *buttons):
     user_step[cid] = step
     main_menu.keyboard.clear()
-    for button in buttons:
-        main_menu.add(button)
+    main_menu.row(*buttons)
     bot.send_message(cid, message, reply_markup=main_menu)
 
 
