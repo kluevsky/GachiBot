@@ -12,7 +12,6 @@ settings = dotenv_values(".env")
 
 TOKEN = settings["TOKEN"]
 BASE_URL = settings["BASE_URL"]
-FAVORITES_FILE = settings["FAVORITES_FILE"]
 
 button_labels = {
     "next_track": "Какой следующий трек?",
