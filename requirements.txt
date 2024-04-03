@@ -1,3 +1,7 @@
 requests
 telebot
 dotenv
+psycopg2
+datetime
+json
+enum
