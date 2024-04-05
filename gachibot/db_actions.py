@@ -115,14 +115,46 @@ def get_song_list_update_time():
 
 
 def get_favorites(cid):
-    return
+    conn = psycopg2.connect(
+        database=DB_NAME,
+        host=DB_SERVER,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT s.id, s.title, s.request_id FROM favorites f JOIN songs s on s.id = f.song_id WHERE f.cid = '{cid}'")
+    result = cursor.fetchall()
+    conn.close()
+    return result
 
 
-def add_favorites(cid, song):
-    return
+def add_favorites(cid, song_id):
+    is_added = False
+    conn = psycopg2.connect(
+        database=DB_NAME,
+        host=DB_SERVER,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
+    conn.autocommit = True
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM favorites WHERE cid = '{cid}' AND song_id = '{song_id}'")
+    result = cursor.fetchone()
+    if not result:
+        try:
+            cursor.execute(f"INSERT INTO favorites VALUES ('{cid}', '{song_id}')")
+            is_added = True
+        except:
+            is_added = False
+    else:
+        is_added = False
+    conn.close()
+    return is_added
 
 
-def delete_favorites(cid, song):
+def delete_favorites(cid, song_id):
     return
 
 
