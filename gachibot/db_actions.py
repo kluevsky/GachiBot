@@ -160,3 +160,17 @@ def delete_favorites(cid, song_id):
 
 def search_song(search_string):
     return
+
+def get_random_song_from_db():
+    conn = psycopg2.connect(
+        database=DB_NAME,
+        host=DB_SERVER,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM songs ORDER BY RANDOM() LIMIT 1")
+    result = cursor.fetchone()
+    conn.close()
+    return result

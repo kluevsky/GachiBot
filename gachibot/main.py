@@ -1,6 +1,7 @@
 import requests
 import telebot
 import json
+import random
 from telebot.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import dotenv_values
 from enum import Enum, auto
@@ -20,7 +21,8 @@ button_labels = {
     "add_favorites": "⭐ В избранное",
     "delete_favorites": "❌ Удалить",
     "get_favorites": "⭐ Избранное",
-    "request_song": "🎶 Заказать"
+    "request_song": "🎶 Заказать",
+    "random_song": "Случайный трек"
 }
 
 endpoints = {
@@ -52,7 +54,7 @@ def chose_main_actions(message):
         bot.send_photo(cid, next_track["art"], next_track["title"])
 
     if message.text == button_labels["request_track"]:
-        open_main_menu(cid, 1, "Какой трек ищем?", button_labels["get_favorites"], button_labels["go_back"])
+        open_main_menu(cid, 1, "Какой трек ищем?", button_labels["get_favorites"], button_labels["random_song"], button_labels["go_back"])
 
 
 @bot.message_handler(func=lambda message: get_user_step(message.chat.id) == 1, content_types=["text"])
@@ -90,6 +92,31 @@ def handle_search(message):
                     )
                 )
                 bot.send_message(cid, song[1], reply_markup=markup)
+        return
+    
+    elif message.text == button_labels["random_song"]:
+        if db_exists:
+            song = get_random_song_from_db()
+        else:
+            song = get_random_song()
+        markup = InlineKeyboardMarkup(row_width=5)
+        markup.row(
+                InlineKeyboardButton(
+                    text=button_labels["request_song"], 
+                    callback_data=get_song_callback_string(
+                        SongOperation.request.value, 
+                        song[2]
+                    )
+                ),
+                InlineKeyboardButton(
+                    text=button_labels["add_favorites"],
+                    callback_data=get_song_callback_string(
+                        SongOperation.request.value, 
+                        song[0]
+                    )
+                )
+            )
+        bot.send_message(cid, song[1], reply_markup=markup)
         return
     
     else:
@@ -218,6 +245,29 @@ def get_all_songs():
         for song in response["rows"]:
             songs.append((song["song"]["id"], song["song"]["title"], song["request_id"]))
     return songs
+
+
+def get_random_song():
+    endpoint = endpoints["search"]
+    params = {
+        "internal": "true",
+        "rowCount": 1,
+        "current": 1,
+        "flushCache": "true",
+        "sortOrder": "ASC"
+    }
+    request = requests.get(BASE_URL + endpoint, params)
+    response = request.json()
+    total_pages = response["total_pages"]
+    params["current"] = random.randint(1, total_pages)
+    request = requests.get(BASE_URL + endpoint, params)
+    response = request.json()
+    song = (
+        response["rows"][0]["song"]["id"],
+        response["rows"][0]["song"]["title"],
+        response["rows"][0]["request_id"]
+    )
+    return song
 
 
 db_exists = check_db()
