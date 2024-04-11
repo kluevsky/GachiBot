@@ -158,8 +158,19 @@ def delete_favorites(cid, song_id):
     return
 
 
-def search_song(search_string):
-    return
+def search_song_from_db(search_string):
+    conn = psycopg2.connect(
+        database=DB_NAME,
+        host=DB_SERVER,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM songs WHERE title LIKE '%{search_string}%'")
+    result = cursor.fetchall()
+    conn.close()
+    return result
 
 def get_random_song_from_db():
     conn = psycopg2.connect(

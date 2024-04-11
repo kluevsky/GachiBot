@@ -120,29 +120,33 @@ def handle_search(message):
         return
     
     else:
-        result = search_song(message.text)
-        if not result["rows"]:
+        if db_exists:
+            result = search_song_from_db(message.text)
+        else:
+            result = search_song(message.text)
+
+        if not result:
             bot.send_message(cid, "Ниче не найдено, повтори")
         else:
-            for song in result["rows"]:
+            for song in result:
                 markup = InlineKeyboardMarkup(row_width=5)
                 markup.row(
                     InlineKeyboardButton(
                         text=button_labels["request_song"], 
                         callback_data=get_song_callback_string(
                             SongOperation.request.value, 
-                            song["request_id"]
+                            song[2]
                         )
                     ),
                     InlineKeyboardButton(
                         text=button_labels["add_favorites"], 
                         callback_data=get_song_callback_string(
                             SongOperation.add_favorite.value, 
-                            song["song"]["id"]
+                            song[0]
                         )
                     )
                 )
-                bot.send_message(cid, song["song"]["title"], reply_markup=markup)
+                bot.send_message(cid, song[1], reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call:True)
@@ -172,6 +176,7 @@ def get_next_track():
 
 
 def search_song(search_phrase):
+    songs = list()
     endpoint = endpoints["search"]
     params = {
         "internal": "true",
@@ -183,7 +188,14 @@ def search_song(search_phrase):
     }
     request = requests.get(BASE_URL + endpoint, params)
     response = request.json()
-    return response
+    for row in response["rows"]:
+        song = (
+            row["song"]["id"],
+            row["song"]["title"],
+            row["request_id"]
+        )
+        songs.append(song)
+    return songs
 
 
 def get_song_callback_string(operation, song_id):
