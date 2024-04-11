@@ -34,6 +34,7 @@ endpoints = {
 class SongOperation(Enum):
     request = auto()
     add_favorite = auto()
+    delete_favorite = auto()
 
 db_exists = False
 user_step = dict()
@@ -86,7 +87,7 @@ def handle_search(message):
                     InlineKeyboardButton(
                         text=button_labels["delete_favorites"],
                         callback_data=get_song_callback_string(
-                            SongOperation.request.value, 
+                            SongOperation.delete_favorite.value, 
                             song[0]
                         )
                     )
@@ -163,6 +164,11 @@ def handle_song_callback(callback):
             bot.send_message(cid, "Трек добавлен в избранное")
         else:
             bot.send_message(cid, "Не удалось добавить в избранное. Возможно, такой трек уже добавлен.")
+    elif callback_json["operation"] == SongOperation.delete_favorite.value:
+        if delete_favorites(cid, callback_json["song_id"]):
+            bot.send_message(cid, "Трек удален из избранного")
+        else:
+            bot.send_message(cid, "Не удалось удалить трек")
 
 
 def get_next_track():
