@@ -22,7 +22,7 @@ button_labels = {
     "delete_favorites": "❌ Удалить",
     "get_favorites": "⭐ Избранное",
     "request_song": "🎶 Заказать",
-    "random_song": "Случайный трек"
+    "random_song": "❓Случайный трек"
 }
 
 endpoints = {
@@ -44,7 +44,7 @@ bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 @bot.message_handler(commands=["start"])
 def handle_start(message):
-    open_main_menu(message.chat.id, 0, "Что хочешь?", button_labels["next_track"], button_labels["request_track"])
+    open_main_menu(message.chat.id, 0, "Выбери действие", button_labels["next_track"], button_labels["request_track"])
 
 
 @bot.message_handler(func=lambda message: get_user_step(message.chat.id) == 0, content_types=["text"])
@@ -62,7 +62,7 @@ def chose_main_actions(message):
 def handle_search(message):
     cid = message.chat.id
     if message.text == button_labels["go_back"]:
-        open_main_menu(cid, 0, "Что хочешь?", button_labels["next_track"], button_labels["request_track"])
+        open_main_menu(cid, 0, "Выбери действие", button_labels["next_track"], button_labels["request_track"])
         return
     
     elif message.text == button_labels["get_favorites"]:
@@ -219,12 +219,12 @@ def request_song(cid, song_id):
         request = requests.post(BASE_URL + endpoint + song_id, headers=headers)
         response = request.json()
     except:
-        bot.send_message(cid, "КРИТИЧЕСКИЙ СБОЙ")
+        bot.send_message(cid, "Произошла неизвестная ошибка")
         user_step[cid] = 0
         return
     
     if response["success"] == True:
-        open_main_menu(cid, 0, "ТРЕК ЗАКАЗАН", button_labels["next_track"], button_labels["request_track"])
+        open_main_menu(cid, 0, "Трек заказан", button_labels["next_track"], button_labels["request_track"])
     else:
         bot.send_message(cid, response["formatted_message"])
 
