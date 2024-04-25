@@ -200,7 +200,10 @@ def get_next_track():
     request = requests.get(BASE_URL + endpoint)
     response = request.json()
     next_track["art"] = response["playing_next"]["song"]["art"]
-    next_track["title"] = response["playing_next"]["song"]["title"]
+    if response["playing_next"]["is_request"]:
+        next_track["title"] = response["playing_next"]["song"]["title"] + " (заказан)"
+    else:
+        next_track["title"] = response["playing_next"]["song"]["title"] + " (не заказан)"
     return next_track
 
 
