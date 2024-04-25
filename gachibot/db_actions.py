@@ -123,7 +123,7 @@ def get_favorites(cid):
         password=DB_PASSWORD
     )
     cursor = conn.cursor()
-    cursor.execute(f"SELECT s.id, s.title, s.request_id FROM favorites f JOIN songs s on s.id = f.song_id WHERE f.cid = '{cid}'")
+    cursor.execute(f"SELECT s.id, s.title, s.request_id FROM favorites f JOIN songs s on s.id = f.song_id WHERE f.cid = '{cid}' ORDER BY LOWER(title)")
     result = cursor.fetchall()
     conn.close()
     return result
@@ -181,7 +181,7 @@ def search_song_from_db(search_string):
         password=DB_PASSWORD
     )
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM songs WHERE LOWER(title) LIKE LOWER('%{search_string}%')")
+    cursor.execute(f"SELECT * FROM songs WHERE LOWER(title) LIKE LOWER('%{search_string}%') ORDER BY LOWER(title)")
     result = cursor.fetchall()
     conn.close()
     return result

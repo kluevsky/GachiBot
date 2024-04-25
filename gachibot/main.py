@@ -22,7 +22,8 @@ button_labels = {
     "delete_favorites": "❌ Удалить",
     "get_favorites": "⭐ Избранное",
     "request_song": "🎶 Заказать",
-    "random_song": "❓Случайный трек"
+    "random_song": "❓ Случайный трек",
+    "song_requested": "✅ Трек заказан"
 }
 
 endpoints = {
@@ -35,6 +36,7 @@ class SongOperation(Enum):
     request = auto()
     add_favorite = auto()
     delete_favorite = auto()
+    already_requested = auto()
 
 db_exists = False
 user_step = dict()
@@ -112,7 +114,7 @@ def handle_search(message):
                 InlineKeyboardButton(
                     text=button_labels["add_favorites"],
                     callback_data=get_song_callback_string(
-                        SongOperation.request.value, 
+                        SongOperation.add_favorite.value, 
                         song[0]
                     )
                 )
@@ -153,22 +155,43 @@ def handle_search(message):
 @bot.callback_query_handler(func=lambda call:True)
 def handle_song_callback(callback):
     cid = callback.message.chat.id
+    cbid = callback.id
     callback_json = json.loads(callback.data)
     if callback_json["operation"] == SongOperation.request.value:
-        request_song(cid, callback_json["song_id"])
+        is_requested = request_song(cid, callback_json["song_id"])
+        if is_requested:
+            bot.answer_callback_query(cbid, "Трек заказан", True)
+            markup = InlineKeyboardMarkup(row_width=5)
+            markup.row(
+                InlineKeyboardButton(
+                    text=button_labels["song_requested"], 
+                    callback_data=get_song_callback_string(
+                        SongOperation.already_requested.value,
+                        str()
+                    )
+                )
+            )
+            bot.edit_message_reply_markup(cid, callback.message.id, reply_markup=markup)
+        else:
+            bot.answer_callback_query(cbid, "Не удалось заказать трек, см. ошибку ниже в чате", True)
+
     elif callback_json["operation"] == SongOperation.add_favorite.value:
         if not db_exists:
-            bot.send_message(cid, "Нет подключения к базе")
+            bot.answer_callback_query(cbid, "Нет подключения к базе", True)
             return
         elif add_favorites(cid, callback_json["song_id"]):
-            bot.send_message(cid, "Трек добавлен в избранное")
+            bot.answer_callback_query(cbid, "Трек добавлен в избранное", True)
         else:
-            bot.send_message(cid, "Не удалось добавить в избранное. Возможно, такой трек уже добавлен.")
+            bot.answer_callback_query(cbid, "Не удалось добавить в избранное. Возможно, такой трек уже добавлен.", True)
+
     elif callback_json["operation"] == SongOperation.delete_favorite.value:
         if delete_favorites(cid, callback_json["song_id"]):
-            bot.send_message(cid, "Трек удален из избранного")
+            bot.answer_callback_query(cbid, "Трек удален из избранного", True)
         else:
-            bot.send_message(cid, "Не удалось удалить трек")
+            bot.answer_callback_query(cbid, "Не удалось удалить трек", True)
+
+    elif callback_json["operation"] == SongOperation.already_requested.value:
+        bot.answer_callback_query(cbid, "Трек уже был заказан", True)
 
 
 def get_next_track():
@@ -210,6 +233,7 @@ def get_song_callback_string(operation, song_id):
 
 
 def request_song(cid, song_id):
+    result = False
     endpoint = endpoints["request"]
     headers = {
         "Accept": "application/json",
@@ -224,9 +248,11 @@ def request_song(cid, song_id):
         return
     
     if response["success"] == True:
+        result = True
         open_main_menu(cid, 0, "Трек заказан", button_labels["next_track"], button_labels["request_track"])
     else:
         bot.send_message(cid, response["formatted_message"])
+    return result
 
 
 def get_user_step(cid):
