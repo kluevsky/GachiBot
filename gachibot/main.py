@@ -160,6 +160,7 @@ def handle_song_callback(callback):
     if callback_json["operation"] == SongOperation.request.value:
         is_requested = request_song(cid, callback_json["song_id"])
         if is_requested:
+            bot.answer_callback_query(cbid, "Трек заказан", True)
             markup = InlineKeyboardMarkup(row_width=5)
             markup.row(
                 InlineKeyboardButton(
@@ -171,6 +172,8 @@ def handle_song_callback(callback):
                 )
             )
             bot.edit_message_reply_markup(cid, callback.message.id, reply_markup=markup)
+        else:
+            bot.answer_callback_query(cbid, "Не удалось заказать трек, см. ошибку ниже в чате", True)
 
     elif callback_json["operation"] == SongOperation.add_favorite.value:
         if not db_exists:
