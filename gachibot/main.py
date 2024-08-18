@@ -7,6 +7,7 @@ from dotenv import dotenv_values
 from enum import Enum, auto
 from datetime import datetime, timedelta, timezone
 from db_actions import *
+from time import sleep
 
 
 settings = dotenv_values(".env")
@@ -29,7 +30,8 @@ button_labels = {
 endpoints = {
     "request": "api/station/1/request/",
     "now_playing": "api/nowplaying/gachibass_radio",
-    "search": "api/station/1/requests"
+    "search": "api/station/1/requests",
+    "queue": "api/station/gachibass_radio/queue"
 }
 
 class SongOperation(Enum):
@@ -83,14 +85,14 @@ def handle_search(message):
                         text=button_labels["request_song"], 
                         callback_data=get_song_callback_string(
                             SongOperation.request.value, 
-                            song[2]
+                            song[2] #request_id
                         )
                     ),
                     InlineKeyboardButton(
                         text=button_labels["delete_favorites"],
                         callback_data=get_song_callback_string(
                             SongOperation.delete_favorite.value, 
-                            song[0]
+                            song[0] #id
                         )
                     )
                 )
@@ -252,7 +254,13 @@ def request_song(cid, song_id):
     
     if response["success"] == True:
         result = True
-        open_main_menu(cid, 0, "Трек заказан", button_labels["next_track"], button_labels["request_track"])
+        queue = check_queue(song_id)
+        if queue["song_count"] == 0:
+            text = "Трек заказан (очереди нет)"
+        else:
+            wait_time = datetime.fromtimestamp(queue["time"], timezone.utc) - datetime.now(timezone.utc)
+            text = f"Трек заказан (очередь: {queue["song_count"]}, ожидание: {int(wait_time.total_seconds() / 60)} мин)"
+        open_main_menu(cid, 0, text, button_labels["next_track"], button_labels["request_track"])
     else:
         bot.send_message(cid, response["formatted_message"])
     return result
@@ -317,6 +325,24 @@ def get_random_song():
     return song
 
 
+def check_queue(song_id):
+    result = {
+        "song_count": 0,
+        "time": 0
+    }
+    endpoint = endpoints["queue"]
+    params = {
+        "rowCount": 0
+    }
+    request = requests.get(BASE_URL + endpoint, params)
+    response = request.json()
+    if response["total"] == 3:
+        return result
+    result["song_count"] = response["total"] - 3 #Минус 3, т.к. всегда есть две незаказанные записи плюс одна, которая заказана сейчас
+    result["time"] = response["rows"][response["total"] - 4]["played_at"] + response["rows"][response["total"] - 4]["duration"]
+    return result
+
+
 db_exists = check_db()
 if not db_exists:
     db_exists = create_db()
@@ -330,6 +356,5 @@ if db_exists:
         print("Last update: " + str(song_list_update_time))
 else:
     print("Работаем без базы")
-
 
 bot.infinity_polling()
