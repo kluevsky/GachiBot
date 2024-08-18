@@ -7,7 +7,6 @@ from dotenv import dotenv_values
 from enum import Enum, auto
 from datetime import datetime, timedelta, timezone
 from db_actions import *
-from time import sleep
 
 
 settings = dotenv_values(".env")
