@@ -254,7 +254,7 @@ def request_song(cid, song_id):
     
     if response["success"] == True:
         result = True
-        queue = check_queue(song_id)
+        queue = check_queue()
         if queue["song_count"] == 0:
             text = "Трек заказан (очереди нет)"
         else:
@@ -325,7 +325,7 @@ def get_random_song():
     return song
 
 
-def check_queue(song_id):
+def check_queue():
     result = {
         "song_count": 0,
         "time": 0
